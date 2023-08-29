@@ -1,0 +1,8 @@
+use_frameworks!
+
+platform :ios, '13.0'
+
+target 'LLShare_Example' do
+  pod 'LLShare', :path => '../'
+
+end
