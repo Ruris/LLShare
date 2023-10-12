@@ -3,10 +3,17 @@
 //  LLShare
 //
 //  Created by ZHK on 2023/8/29.
-//  
+//
 //
 
 import UIKit
+
+public protocol LLShareTargetable: UIViewController {
+    
+    var sourceView: UIView? { get }
+    
+    var sourceRect: CGRect? { get }
+}
 
 public struct LLShare {
     
@@ -17,7 +24,7 @@ public struct LLShare {
     ///   - extenName: 文件扩展名
     ///   - text: 文本内容
     /// - Returns: 是否完成分享
-    public static func share(_ viewController: UIViewController, fileName: String, extenName: String, text: String) async throws -> Bool {
+    public static func share(_ viewController: LLShareTargetable, fileName: String, extenName: String, text: String) async throws -> Bool {
         guard let data = text.data(using: .utf8) else {
             return false
         }
@@ -33,7 +40,7 @@ public struct LLShare {
     ///   - extenName: 文件扩展名
     ///   - data: Data 对象
     /// - Returns: 是否完成分享
-    public static func share(_ viewController: UIViewController, fileName: String, extenName: String, data: Data) async throws -> Bool {
+    public static func share(_ viewController: LLShareTargetable, fileName: String, extenName: String, data: Data) async throws -> Bool {
         let path = try directory() + "\(fileName).\(extenName)"
         // 把文本写到本地
         if FileManager.default.fileExists(atPath: path) == false {
@@ -55,11 +62,17 @@ public struct LLShare {
     ///   - viewController: `Present` 分享面板的 `视图控制器`
     ///   - sources: 资源数组
     /// - Returns: 是否分享成功
-    public static func share(_ viewController: UIViewController, sources: [Any]) async -> Bool {
+    public static func share(_ viewController: LLShareTargetable, sources: [Any]) async -> Bool {
         await withCheckedContinuation { checked in
             let activity = UIActivityViewController(activityItems: sources, applicationActivities: nil)
             activity.completionWithItemsHandler = { _, success, _, _ in
                 checked.resume(with: .success(success))
+            }
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                activity.popoverPresentationController?.sourceView = viewController.sourceView
+                if let rect = viewController.sourceRect {
+                    activity.popoverPresentationController?.sourceRect = rect
+                }
             }
             viewController.present(activity, animated: true)
         }
